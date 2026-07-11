@@ -900,10 +900,11 @@
                 return searchPass && categoryPillPass && stockPass && languagePass;
             });
 
+            // Adjust default sort priority: Pre-Order -> Low Stock -> In Stock
             const stockPriority = {
-                "in stock": 1,
+                "pre-order": 1,
                 "low stock": 2,
-                "pre-order": 3,
+                "in stock": 3,
                 "out of stock": 4,
                 "sold out": 4
             };
