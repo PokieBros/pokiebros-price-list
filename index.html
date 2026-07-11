@@ -43,7 +43,7 @@
             <!-- Brand Logo & Shop Identity Space -->
             <div id="logoContainer" class="flex items-center gap-4 transition-all duration-300 origin-left">
                 <div class="relative flex items-center justify-center shrink-0">
-                    <!-- Branded Shop Logo referencing PokieBros #2 Background Removed.jpg -->
+                    <!-- Branded Shop Logo pointing to the renamed, URL-safe PNG file -->
                     <img id="shopLogo" src="logo.png" alt="PokiéBros Logo" class="w-16 h-16 min-w-[64px] min-h-[64px] object-contain transition-all duration-300" onerror="this.onerror=null; this.src='https://placehold.co/100x100/12121a/fbbf24?text=PokiéBros';">
                 </div>
                 <!-- Shop Name & Subtitle Text Wrapper -->
@@ -563,7 +563,10 @@
 
         // Display Fallback/Demo Mock Data
         function useDemoFallback() {
-            products = JSON.parse(JSON.stringify(fallbackDatabase));
+            products = JSON.parse(JSON.stringify(fallbackDatabase)).map((p, idx) => {
+                p._temp_idx = idx;
+                return p;
+            });
             updateConnectionBadge(false);
             buildCategoryFilters();
             buildLanguageFilters();
@@ -646,9 +649,10 @@
                             return;
                         }
 
-                        // Normalize headers and assign formatted products
+                        // Normalize headers and assign formatted products with safety internal tracking indices
                         products = results.data.map((item, idx) => {
                             return {
+                                "_temp_idx": idx,
                                 "ID": getNormalizedValue(item, ["ID", "id", "Product ID", "Code", "sku"]),
                                 "Product Name": getNormalizedValue(item, ["Product Name", "product name", "Name", "Title", "item", "product"]),
                                 "Category": getNormalizedValue(item, ["Category", "category", "Type", "class"]),
@@ -939,204 +943,3 @@
             document.getElementById('searchInput').value = "";
             document.getElementById('stockFilter').value = "all";
             document.getElementById('languageFilter').value = "all";
-            document.getElementById('sortSelect').value = "none";
-            activeCategoryFilter = "all";
-            buildCategoryFilters();
-            applyFilters();
-        }
-
-        function renderProductCards(items) {
-            const container = document.getElementById('productsGrid');
-            const emptyState = document.getElementById('emptyState');
-            
-            container.innerHTML = "";
-
-            if (items.length === 0) {
-                emptyState.classList.remove('hidden');
-                container.classList.add('hidden');
-                return;
-            }
-
-            emptyState.classList.add('hidden');
-            container.classList.remove('hidden');
-
-            items.forEach((p, index) => {
-                const objectPointer = products.findIndex(item => item["ID"] === p["ID"]);
-                const stockBadge = getStockBadgeTemplate(p["Stock Status"]);
-
-                const langValue = p["Language"] ? p["Language"].trim() : "";
-                const langBadge = langValue ? `<span class="bg-amber-500/10 text-amber-300 border border-amber-500/20 text-[9px] font-black px-2 py-0.5 rounded-full backdrop-blur-sm">${langValue}</span>` : "";
-
-                // Run image URL through our automatic formatter
-                const finalImgUrl = formatImageUrl(p["Image URL"]);
-
-                const card = document.createElement('div');
-                card.className = "bg-[#12121a] border border-slate-800/80 hover:border-slate-700/80 rounded-2xl overflow-hidden shadow-md hover:shadow-amber-500/5 hover:-translate-y-1 transition-all duration-300 flex flex-col cursor-pointer group";
-                card.setAttribute('onclick', `openProductDetails(${objectPointer})`);
-
-                // Added referrerpolicy to bypass hotlink protection on grid images
-                card.innerHTML = `
-                    <div class="relative bg-[#09090e] flex items-center justify-center p-4 aspect-[4/3] border-b border-slate-800/50 overflow-hidden">
-                        <img 
-                            src="${finalImgUrl || 'https://placehold.co/400x400/12121a/fbbf24?text=TCG+Product'}" 
-                            alt="${p["Product Name"]}" 
-                            class="max-h-full max-w-full object-contain rounded-xl hover:scale-105 transition duration-350 drop-shadow-md"
-                            onerror="handleImageError(this)"
-                            referrerpolicy="no-referrer"
-                        >
-                        <div class="absolute top-3 left-3 flex flex-col gap-1.5">
-                            ${stockBadge}
-                        </div>
-                        <div class="absolute top-3 right-3 flex flex-col gap-1.5">
-                            ${langBadge}
-                        </div>
-                    </div>
-                    
-                    <div class="p-4 flex-grow flex flex-col justify-between space-y-4">
-                        <div class="space-y-1">
-                            <div class="flex items-center justify-between gap-2">
-                                <span class="text-[10px] font-extrabold text-amber-400 uppercase tracking-widest truncate">${p["Category"] || 'Miscellaneous'}</span>
-                                ${p["ID"] ? `<span class="text-[9px] font-mono font-bold text-slate-500 uppercase tracking-wider shrink-0">${p["ID"]}</span>` : ''}
-                            </div>
-                            <h4 class="text-sm font-bold text-white line-clamp-2 leading-snug group-hover:text-amber-400 transition duration-150">${p["Product Name"]}</h4>
-                        </div>
-
-                        <div class="pt-2 border-t border-slate-800/50 flex items-center justify-between">
-                            <div>
-                                <span class="text-[8px] text-slate-550 font-extrabold uppercase tracking-widest block">Price</span>
-                                <div class="flex items-center">
-                                    <span class="text-base font-extrabold text-amber-400">${p["Price"] || 'TBD'}</span>
-                                </div>
-                            </div>
-                            <div class="w-8 h-8 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-400 group-hover:bg-amber-500 group-hover:text-black transition">
-                                <i data-lucide="chevron-right" class="w-4 h-4"></i>
-                            </div>
-                        </div>
-                    </div>
-                `;
-
-                container.appendChild(card);
-            });
-
-            lucide.createIcons();
-        }
-
-        function handleImageError(img) {
-            img.src = "https://placehold.co/400x400/09090e/222235?text=Image+Pending";
-        }
-
-        function getStockBadgeTemplate(status) {
-            const clean = status ? status.toLowerCase().trim() : "";
-            if (clean === "in stock") {
-                return `<span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider">In Stock</span>`;
-            } else if (clean === "pre-order") {
-                return `<span class="bg-blue-500/10 text-blue-400 border border-blue-500/20 text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider">Pre-Order</span>`;
-            } else if (clean === "low stock") {
-                return `<span class="bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider">Low Stock</span>`;
-            } else if (clean === "out of stock") {
-                return `<span class="bg-red-500/10 text-red-400 border border-red-500/20 text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider">Sold Out</span>`;
-            }
-            return `<span class="bg-slate-800 text-slate-400 border border-slate-700/50 text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider">Check Stock</span>`;
-        }
-
-        let selectedProductIndex = null;
-
-        function openProductDetails(globalIndex) {
-            selectedProductIndex = globalIndex;
-            const p = products[globalIndex];
-
-            // Run image URL through our automatic formatter for the modal view as well
-            const finalImgUrl = formatImageUrl(p["Image URL"]);
-
-            document.getElementById('detailTitle').innerText = p["Product Name"];
-            document.getElementById('detailCategory').innerText = p["Category"] || 'Miscellaneous';
-            document.getElementById('detailImg').src = finalImgUrl || 'https://placehold.co/400x400/12121a/fbbf24?text=TCG+Product';
-            document.getElementById('detailImg').alt = p["Product Name"];
-            document.getElementById('detailPrice').innerText = p["Price"] || 'Price TBD';
-            document.getElementById('detailId').innerText = p["ID"] || 'N/A';
-            document.getElementById('detailLastUpdate').innerText = p["Last Updated"] || 'Not Specified';
-            document.getElementById('detailNotes').innerText = p["Notes"] || 'No custom description notes have been entered for this TCG item.';
-
-            const langEl = document.getElementById('detailLanguageBadge');
-            if (p["Language"]) {
-                langEl.innerText = `${p["Language"]} Print`;
-                langEl.classList.remove('hidden');
-            } else {
-                langEl.classList.add('hidden');
-            }
-
-            const badgeEl = document.getElementById('detailBadge');
-            const cleanStock = p["Stock Status"] ? p["Stock Status"].toLowerCase().trim() : "";
-            
-            badgeEl.className = "px-3.5 py-1 rounded-full text-[9px] font-extrabold uppercase tracking-widest ";
-            if (cleanStock === "in stock") {
-                badgeEl.innerText = "In Stock";
-                badgeEl.className += "bg-emerald-500 text-black";
-            } else if (cleanStock === "pre-order") {
-                badgeEl.innerText = "Pre-Order";
-                badgeEl.className += "bg-blue-500 text-white";
-            } else if (cleanStock === "low stock") {
-                badgeEl.innerText = "Low Stock";
-                badgeEl.className += "bg-amber-400 text-black";
-            } else {
-                badgeEl.innerText = "Sold Out";
-                badgeEl.className += "bg-red-500 text-white";
-            }
-
-            toggleDetailModal();
-        }
-
-        function toggleDetailModal() {
-            const modal = document.getElementById('detailModal');
-            modal.classList.toggle('hidden');
-            lucide.createIcons();
-        }
-
-        function copyShareLink() {
-            if (selectedProductIndex === null) return;
-            const p = products[selectedProductIndex];
-
-            const shareText = `*${p["Product Name"]}* \nPrice: ${p["Price"] || 'TBD'} (${p["Stock Status"] || 'Check Status'}) \nLanguage: ${p["Language"] || 'N/A'} \nNotes: ${p["Notes"] || 'No detailed info'}`;
-            
-            const tempInput = document.createElement("textarea");
-            tempInput.value = shareText;
-            document.body.appendChild(tempInput);
-            tempInput.select();
-            document.execCommand('copy');
-            document.body.removeChild(tempInput);
-
-            showToast("Copied product info to clipboard!", "success");
-        }
-
-        function showToast(message, type = "info") {
-            const toast = document.getElementById('toast');
-            const icon = document.getElementById('toastIcon');
-            document.getElementById('toastText').innerText = message;
-            
-            if (type === "success") {
-                toast.className = "fixed bottom-5 right-5 z-50 bg-[#12121a] border border-emerald-500/20 text-emerald-300 px-4 py-3.5 rounded-xl shadow-2xl flex items-center gap-2.5 transform transition-all duration-300 text-xs font-bold";
-                icon.setAttribute('data-lucide', 'check-circle');
-                icon.className = "w-4 h-4 text-emerald-400";
-            } else if (type === "error") {
-                toast.className = "fixed bottom-5 right-5 z-50 bg-[#12121a] border border-red-500/20 text-red-300 px-4 py-3.5 rounded-xl shadow-2xl flex items-center gap-2.5 transform transition-all duration-300 text-xs font-bold";
-                icon.setAttribute('data-lucide', 'alert-circle');
-                icon.className = "w-4 h-4 text-red-400";
-            } else {
-                toast.className = "fixed bottom-5 right-5 z-50 bg-[#12121a] border border-amber-500/20 text-amber-300 px-4 py-3.5 rounded-xl shadow-2xl flex items-center gap-2.5 transform transition-all duration-300 text-xs font-bold";
-                icon.setAttribute('data-lucide', 'info');
-                icon.className = "w-4 h-4 text-amber-400";
-            }
-            
-            lucide.createIcons();
-
-            toast.classList.remove('translate-y-20', 'opacity-0');
-            toast.classList.add('translate-y-0', 'opacity-100');
-
-            setTimeout(() => {
-                toast.classList.add('translate-y-20', 'opacity-0');
-                toast.classList.remove('translate-y-0', 'opacity-100');
-            }, 5000);
-        }
-    </script>
-</body>
-</html>
