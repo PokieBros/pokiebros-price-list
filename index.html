@@ -44,7 +44,7 @@
             <div id="logoContainer" class="flex items-center gap-3 sm:gap-4 transition-all duration-300 origin-left">
                 <div class="relative flex items-center justify-center shrink-0">
                     <!-- Branded Shop Logo pointing directly to local logo.png file -->
-                    <img id="shopLogo" src="logo.png" alt="PokiéBros Logo" class="w-16 h-16 sm:w-24 sm:h-24 min-w-[64px] sm:min-w-[96px] min-h-[64px] sm:min-h-[96px] object-contain transition-all duration-300" onerror="this.onerror=null; this.src='https://placehold.co/100x100/12121a/fbbf24?text=PokiéBros';">
+                    <img id="shopLogo" src="logo.png" alt="PokiéBros Logo" class="w-20 h-20 sm:w-28 sm:h-28 min-w-[80px] sm:min-w-[112px] min-h-[80px] sm:min-h-[112px] object-contain transition-all duration-300" onerror="this.onerror=null; this.src='logo.jpg';">
                 </div>
                 <!-- Shop Name & Subtitle Text Wrapper -->
                 <div id="shopTextContainer" class="transition-all duration-300">
@@ -527,31 +527,25 @@
             const shopSubtitle = document.getElementById('shopSubtitle');
             
             if (window.scrollY > 20) {
-                // Apply condensed scroll state
+                // Apply condensed scroll state (retaining the subtitle)
                 header.classList.remove('py-4', 'sm:py-6', 'h-20', 'sm:h-28');
-                header.classList.add('py-1.5', 'sm:py-2', 'h-14', 'sm:h-16', 'shadow-xl', 'shadow-black/60');
+                header.classList.add('py-1.5', 'sm:py-2', 'h-16', 'sm:h-20', 'shadow-xl', 'shadow-black/60');
                 
-                logoImg.classList.remove('w-16', 'h-16', 'sm:w-24', 'sm:h-24', 'min-w-[64px]', 'sm:min-w-[96px]', 'min-h-[64px]', 'sm:min-h-[96px]');
-                logoImg.classList.add('w-10', 'h-10', 'sm:w-12', 'sm:h-12', 'min-w-[40px]', 'sm:min-w-[48px]', 'min-h-[40px]', 'sm:min-h-[48px]');
+                logoImg.classList.remove('w-20', 'h-20', 'sm:w-28', 'sm:h-28', 'min-w-[80px]', 'sm:min-w-[112px]', 'min-h-[80px]', 'sm:min-h-[112px]');
+                logoImg.classList.add('w-12', 'h-12', 'sm:w-16', 'sm:h-16', 'min-w-[48px]', 'sm:min-w-[64px]', 'min-h-[48px]', 'sm:min-h-[64px]');
                 
                 shopTitle.classList.remove('text-xl', 'sm:text-2xl', 'md:text-3xl');
-                shopTitle.classList.add('text-base', 'sm:text-lg');
-                
-                shopSubtitle.classList.add('opacity-0', 'pointer-events-none', 'max-h-0', 'overflow-hidden');
-                shopSubtitle.classList.remove('mt-1', 'mt-1.5');
+                shopTitle.classList.add('text-base', 'sm:text-xl');
             } else {
                 // Restore expansive top layout
-                header.classList.remove('py-1.5', 'sm:py-2', 'h-14', 'sm:h-16', 'shadow-xl', 'shadow-black/60');
+                header.classList.remove('py-1.5', 'sm:py-2', 'h-16', 'sm:h-20', 'shadow-xl', 'shadow-black/60');
                 header.classList.add('py-4', 'sm:py-6', 'h-20', 'sm:h-28');
                 
-                logoImg.classList.remove('w-10', 'h-10', 'sm:w-12', 'sm:h-12', 'min-w-[40px]', 'sm:min-w-[48px]', 'min-h-[40px]', 'sm:min-h-[48px]');
-                logoImg.classList.add('w-16', 'h-16', 'sm:w-24', 'sm:h-24', 'min-w-[64px]', 'sm:min-w-[96px]', 'min-h-[64px]', 'sm:min-h-[96px]');
+                logoImg.classList.remove('w-12', 'h-12', 'sm:w-16', 'sm:h-16', 'min-w-[48px]', 'sm:min-w-[64px]', 'min-h-[48px]', 'sm:min-h-[64px]');
+                logoImg.classList.add('w-20', 'h-20', 'sm:w-28', 'sm:h-28', 'min-w-[80px]', 'sm:min-w-[112px]', 'min-h-[80px]', 'sm:min-h-[112px]');
                 
-                shopTitle.classList.remove('text-base', 'sm:text-lg');
+                shopTitle.classList.remove('text-base', 'sm:text-xl');
                 shopTitle.classList.add('text-xl', 'sm:text-2xl', 'md:text-3xl');
-                
-                shopSubtitle.classList.remove('opacity-0', 'pointer-events-none', 'max-h-0', 'overflow-hidden');
-                shopSubtitle.classList.add('mt-1', 'mt-1.5');
             }
         });
 
