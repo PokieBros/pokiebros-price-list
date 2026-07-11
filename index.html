@@ -43,7 +43,7 @@
             <!-- Brand Logo & Shop Identity Space -->
             <div id="logoContainer" class="flex items-center gap-3 sm:gap-4 transition-all duration-300 origin-left">
                 <div class="relative flex items-center justify-center shrink-0">
-                    <!-- Branded Shop Logo pointing directly to local logo.png file -->
+                    <!-- Branded Shop Logo pointing directly to local logo.png file with fallback to logo.jpg -->
                     <img id="shopLogo" src="logo.png" alt="PokiéBros Logo" class="w-20 h-20 sm:w-28 sm:h-28 min-w-[80px] sm:min-w-[112px] min-h-[80px] sm:min-h-[112px] object-contain transition-all duration-300" onerror="this.onerror=null; this.src='logo.jpg';">
                 </div>
                 <!-- Shop Name & Subtitle Text Wrapper -->
@@ -76,7 +76,7 @@
     </header>
 
     <!-- Main Workspace Container -->
-    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:y-8">
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8">
         
         <!-- Filter Controls Container -->
         <section class="bg-[#12121a] border border-slate-800/80 rounded-2xl p-4 sm:p-6 space-y-4 shadow-sm">
@@ -139,7 +139,7 @@
         </section>
 
         <!-- Product Grid Workspace -->
-        <section>
+        <section id="productsSection" class="scroll-mt-32">
             <!-- Loading Indicator -->
             <div id="loadingState" class="hidden flex-col items-center justify-center py-20 space-y-4">
                 <div class="w-10 h-10 border-2 border-amber-500/10 border-t-amber-400 rounded-full animate-spin"></div>
@@ -161,6 +161,11 @@
             <!-- Active Products Cards Container (Double column on mobile grid-cols-2) -->
             <div id="productsGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
                 <!-- Dynamically filled with products cards -->
+            </div>
+
+            <!-- Pagination Controls -->
+            <div id="paginationContainer" class="flex flex-wrap items-center justify-center gap-2 mt-10 py-4 select-none">
+                <!-- Dynamically populated with arrows and page numbers -->
             </div>
         </section>
     </main>
@@ -339,9 +344,14 @@
 
     <!-- UI Message Toast Notifications -->
     <div id="toast" class="fixed bottom-5 right-5 z-50 bg-[#12121a] border border-slate-800 text-slate-200 px-4 py-3.5 rounded-xl shadow-2xl flex items-center gap-2.5 transform translate-y-20 opacity-0 transition-all duration-300 text-xs font-bold">
-        <i id="toastIcon" data-lucide="info" class="w-4 h-4 text-amber-450"></i>
+        <i id="toastIcon" data-lucide="info" class="w-4 h-4 text-amber-455"></i>
         <span id="toastText">Action completed!</span>
     </div>
+
+    <!-- Return to Top Floating Button -->
+    <button id="scrollTopBtn" onclick="scrollToTop()" class="fixed bottom-6 right-6 z-40 bg-amber-500 hover:bg-amber-400 active:scale-95 text-black p-3.5 rounded-full shadow-2xl shadow-black/80 opacity-0 translate-y-10 pointer-events-none transition-all duration-300 flex items-center justify-center hover:shadow-amber-500/20 border border-amber-600/30 group">
+        <i data-lucide="arrow-up" class="w-5 h-5 transition-transform duration-250 group-hover:-translate-y-0.5"></i>
+    </button>
 
     <!-- Footer copyright info -->
     <footer class="bg-[#09090e] border-t border-slate-900 py-6 text-center text-xs text-slate-500 mt-auto">
@@ -353,10 +363,8 @@
 
     <script>
         // ==========================================
-        //  OWNER CONFIGURATION: HARDCODE YOUR SHEET
+        //  OWNER CONFIGURATION: HARDCODED SHEET LINK
         // ==========================================
-        // Paste your standard Google Sheet URL between the quotes below.
-        // Once pasted, everyone who visits your site will automatically see your live data!
         const DEFAULT_SHEET_URL = "https://docs.google.com/spreadsheets/d/1WQImNkf_zh51UQYzskMB5TT7xNDFkIXaGupqLwKeLUE/edit?usp=sharing"; 
 
         // Set the allowed categories as defined by you
@@ -376,7 +384,7 @@
         /**
          * Automatically formats raw image URLs. 
          * Robustly catches any variant of Google Drive links and converts them 
-         * to Google's fast, web-optimized, Safari-compatible direct-image CDN.
+         * to Google's fast, Safari-compatible direct-image CDN.
          */
         function formatImageUrl(url) {
             if (!url) return "";
@@ -423,7 +431,7 @@
                 "Price": "$42.50",
                 "Stock Status": "In Stock",
                 "Language": "English",
-                "Image URL": "https://placehold.co/400x400/12121a/fbbf24?text=151+Booster+Bundle",
+                "Image URL": "",
                 "Last Updated": "2026-07-09",
                 "Notes": "Contains 6 Scarlet & Violet-151 booster packs. Ideal for master set collectors. Excellent entry set."
             },
@@ -434,7 +442,7 @@
                 "Price": "$52.00",
                 "Stock Status": "In Stock",
                 "Language": "English",
-                "Image URL": "https://placehold.co/400x400/12121a/fbbf24?text=Crown+Zenith+ETB",
+                "Image URL": "",
                 "Last Updated": "2026-07-05",
                 "Notes": "Includes 10 Crown Zenith booster packs, 1 Lucario VSTAR special art promo card, and various premium accessories."
             },
@@ -445,7 +453,7 @@
                 "Price": "$119.99",
                 "Stock Status": "Pre-Order",
                 "Language": "English",
-                "Image URL": "https://placehold.co/400x400/12121a/fbbf24?text=Charizard+Collection",
+                "Image URL": "",
                 "Last Updated": "2026-07-11",
                 "Notes": "Features an incredible etched foil promo card featuring Charizard ex, plus a heavy storage box and accessories."
             },
@@ -454,9 +462,9 @@
                 "Product Name": "Charizard Base Set Unlimited - PSA 8",
                 "Category": "Graded Slabs",
                 "Price": "$450.00",
-                "Stock Status": "Low Stock",
+                "Stock Status": "In Stock",
                 "Language": "English",
-                "Image URL": "https://placehold.co/400x400/12121a/fbbf24?text=Base+Set+Charizard",
+                "Image URL": "",
                 "Last Updated": "2026-07-10",
                 "Notes": "Classic 1999 holographic Base Set Charizard graded 8 (Near Mint-Mint) by PSA. Iconic grail item."
             },
@@ -467,26 +475,20 @@
                 "Price": "$135.00",
                 "Stock Status": "Pre-Order",
                 "Language": "Japanese",
-                "Image URL": "https://placehold.co/400x400/12121a/fbbf24?text=Prismatic+Evolutions",
+                "Image URL": "",
                 "Last Updated": "2026-07-01",
                 "Notes": "Upcoming super-anticipated Eeveelutions set. Expected delivery late Q3."
-            },
-            {
-                "ID": "PKB-006",
-                "Product Name": "Shiny Treasure ex Booster Pack",
-                "Category": "Booster Pack",
-                "Price": "$6.49",
-                "Stock Status": "Out of Stock",
-                "Language": "Japanese",
-                "Image URL": "https://placehold.co/400x400/12121a/fbbf24?text=Shiny+Treasure+Pack",
-                "Last Updated": "2026-06-28",
-                "Notes": "Highly popular Japanese High Class subset pack. Currently sold out due to high demand."
             }
         ];
 
         // Global State variables
         let products = [];
+        let filteredProducts = []; // Stores filtered items for pagination
         let activeCategoryFilter = "all";
+        
+        // Pagination state variables
+        let currentPage = 1;
+        const itemsPerPage = 20;
 
         // DOM elements initialization
         window.onload = function() {
@@ -503,8 +505,7 @@
             // Determine which URL to pull live data from
             let activeUrl = DEFAULT_SHEET_URL;
 
-            // If you haven't hardcoded the URL yet, or if you are in admin mode,
-            // fall back to whatever you previously saved in local storage.
+            // Fall back to saved sheets only if default is missing or generic
             if (!activeUrl || activeUrl === "YOUR_GOOGLE_SHEET_URL_HERE") {
                 activeUrl = localStorage.getItem('pkm_sheet_url');
             }
@@ -518,36 +519,51 @@
             lucide.createIcons();
         }
 
-        // Header Scroll shrink interaction listener with fixed sizing backups
+        // Combined window scroll listener for header dynamics and return-to-top button
         window.addEventListener('scroll', function() {
             const header = document.getElementById('mainHeader');
-            const logoContainer = document.getElementById('logoContainer');
             const logoImg = document.getElementById('shopLogo');
             const shopTitle = document.getElementById('shopTitle');
-            const shopSubtitle = document.getElementById('shopSubtitle');
+            const scrollTopBtn = document.getElementById('scrollTopBtn');
             
+            // Header Shrinking Mechanics
             if (window.scrollY > 20) {
-                // Apply condensed scroll state (retaining the subtitle)
                 header.classList.remove('py-4', 'sm:py-6', 'h-20', 'sm:h-28');
                 header.classList.add('py-1.5', 'sm:py-2', 'h-16', 'sm:h-20', 'shadow-xl', 'shadow-black/60');
                 
                 logoImg.classList.remove('w-20', 'h-20', 'sm:w-28', 'sm:h-28', 'min-w-[80px]', 'sm:min-w-[112px]', 'min-h-[80px]', 'sm:min-h-[112px]');
-                logoImg.classList.add('w-12', 'h-12', 'sm:w-16', 'sm:h-16', 'min-w-[48px]', 'sm:min-w-[64px]', 'min-h-[48px]', 'sm:min-h-[64px]');
+                logoImg.classList.add('w-14', 'h-14', 'sm:w-18', 'sm:h-18', 'min-w-[56px]', 'sm:min-w-[72px]', 'min-h-[56px]', 'sm:min-h-[72px]');
                 
                 shopTitle.classList.remove('text-xl', 'sm:text-2xl', 'md:text-3xl');
                 shopTitle.classList.add('text-base', 'sm:text-xl');
             } else {
-                // Restore expansive top layout
                 header.classList.remove('py-1.5', 'sm:py-2', 'h-16', 'sm:h-20', 'shadow-xl', 'shadow-black/60');
                 header.classList.add('py-4', 'sm:py-6', 'h-20', 'sm:h-28');
                 
-                logoImg.classList.remove('w-12', 'h-12', 'sm:w-16', 'sm:h-16', 'min-w-[48px]', 'sm:min-w-[64px]', 'min-h-[48px]', 'sm:min-h-[64px]');
+                logoImg.classList.remove('w-14', 'h-14', 'sm:w-18', 'sm:h-18', 'min-w-[56px]', 'sm:min-w-[72px]', 'min-h-[56px]', 'sm:min-h-[72px]');
                 logoImg.classList.add('w-20', 'h-20', 'sm:w-28', 'sm:h-28', 'min-w-[80px]', 'sm:min-w-[112px]', 'min-h-[80px]', 'sm:min-h-[112px]');
                 
                 shopTitle.classList.remove('text-base', 'sm:text-xl');
                 shopTitle.classList.add('text-xl', 'sm:text-2xl', 'md:text-3xl');
             }
+
+            // Return to Top Button Visibility Mechanics (Activates when scrolled down past 400px)
+            if (window.scrollY > 400) {
+                scrollTopBtn.classList.remove('opacity-0', 'translate-y-10', 'pointer-events-none');
+                scrollTopBtn.classList.add('opacity-100', 'translate-y-0');
+            } else {
+                scrollTopBtn.classList.add('opacity-0', 'translate-y-10', 'pointer-events-none');
+                scrollTopBtn.classList.remove('opacity-100', 'translate-y-0');
+            }
         });
+
+        // Trigger viewport to scroll back to top smoothly
+        function scrollToTop() {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        }
 
         // Display Fallback/Demo Mock Data
         function useDemoFallback() {
@@ -847,7 +863,10 @@
             const languageFilter = document.getElementById('languageFilter').value;
             const sortMode = document.getElementById('sortSelect').value;
 
-            let filteredList = products.filter(p => {
+            // Reset to first page whenever filters are adjusted to avoid page index overflow
+            currentPage = 1;
+
+            filteredProducts = products.filter(p => {
                 // Ensure sold out / out of stock items are completely hidden from display
                 const stockStatus = p["Stock Status"] ? p["Stock Status"].toLowerCase().trim() : "";
                 if (stockStatus === "out of stock" || stockStatus === "sold out") {
@@ -860,7 +879,7 @@
                 const langMatch = p["Language"] ? p["Language"].toLowerCase().includes(searchQuery) : false;
                 const searchPass = nameMatch || categoryMatch || noteMatch || langMatch;
 
-                // Category verification (checks category exact match or handles variations gracefully)
+                // Category verification (checks category exact match)
                 let categoryPillPass = false;
                 if (activeCategoryFilter === 'all') {
                     categoryPillPass = true;
@@ -890,7 +909,7 @@
             };
 
             if (sortMode !== "none") {
-                filteredList.sort((a, b) => {
+                filteredProducts.sort((a, b) => {
                     const priceA = parsePriceToFloat(a["Price"]) || 0;
                     const priceB = parsePriceToFloat(b["Price"]) || 0;
 
@@ -907,7 +926,7 @@
                 });
             } else {
                 // Default sorting by stock priority descending (IN STOCK -> LOW STOCK -> PRE-ORDER -> SOLD OUT)
-                filteredList.sort((a, b) => {
+                filteredProducts.sort((a, b) => {
                     const statusA = (a["Stock Status"] || "").toLowerCase().trim();
                     const statusB = (b["Stock Status"] || "").toLowerCase().trim();
                     const priorityA = stockPriority[statusA] || 99;
@@ -916,7 +935,37 @@
                 });
             }
 
-            renderProductCards(filteredList);
+            renderPaginatedList();
+        }
+
+        // Handles paginated rendering computations
+        function renderPaginatedList() {
+            const container = document.getElementById('productsGrid');
+            const emptyState = document.getElementById('emptyState');
+            
+            if (filteredProducts.length === 0) {
+                container.innerHTML = "";
+                emptyState.classList.remove('hidden');
+                container.classList.add('hidden');
+                document.getElementById('paginationContainer').innerHTML = "";
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            container.classList.remove('hidden');
+
+            const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+            
+            // Safety bound boundary checks
+            if (currentPage > totalPages) currentPage = totalPages;
+            if (currentPage < 1) currentPage = 1;
+
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = Math.min(startIndex + itemsPerPage, filteredProducts.length);
+            const pageItems = filteredProducts.slice(startIndex, endIndex);
+
+            renderProductCards(pageItems);
+            renderPaginationControls(totalPages);
         }
 
         function resetFilters() {
@@ -931,21 +980,10 @@
 
         function renderProductCards(items) {
             const container = document.getElementById('productsGrid');
-            const emptyState = document.getElementById('emptyState');
-            
             container.innerHTML = "";
 
-            if (items.length === 0) {
-                emptyState.classList.remove('hidden');
-                container.classList.add('hidden');
-                return;
-            }
-
-            emptyState.classList.add('hidden');
-            container.classList.remove('hidden');
-
-            items.forEach((p, index) => {
-                const objectPointer = p._temp_idx; // Robust reference link matching exact spreadsheet row idx
+            items.forEach((p) => {
+                const objectPointer = p._temp_idx; // Exact spreadsheet row mapping idx reference
                 const stockBadge = getStockBadgeTemplate(p["Stock Status"]);
 
                 const langValue = p["Language"] ? p["Language"].trim() : "";
@@ -958,7 +996,6 @@
                 card.className = "bg-[#12121a] border border-slate-800/80 hover:border-slate-700/80 rounded-2xl overflow-hidden shadow-md hover:shadow-amber-500/5 hover:-translate-y-1 transition-all duration-300 flex flex-col cursor-pointer group";
                 card.setAttribute('onclick', `openProductDetails(${objectPointer})`);
 
-                // Added referrerpolicy to bypass hotlink protection on grid images (optimized layout padding for double cols on mobile)
                 card.innerHTML = `
                     <div class="relative bg-[#09090e] flex items-center justify-center p-3 sm:p-4 aspect-[4/3] border-b border-slate-800/50 overflow-hidden">
                         <img 
@@ -993,7 +1030,7 @@
                                 </div>
                             </div>
                             <div class="w-6 h-6 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-400 group-hover:bg-amber-500 group-hover:text-black transition shrink-0">
-                                <i data-lucide="chevron-right" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>
+                                <i data-lucide="chevron-right" class="w-3.5 h-3.5 sm:w-4 h-4"></i>
                             </div>
                         </div>
                     </div>
@@ -1003,6 +1040,106 @@
             });
 
             lucide.createIcons();
+        }
+
+        // Generates page control indicators with a smart responsive sliding window
+        function renderPaginationControls(totalPages) {
+            const paginationContainer = document.getElementById('paginationContainer');
+            paginationContainer.innerHTML = "";
+
+            if (totalPages <= 1) return; // Hide pagination completely if only 1 page is present
+
+            // 1. Previous Arrow button
+            const prevBtn = document.createElement('button');
+            prevBtn.className = `flex items-center justify-center w-9 h-9 rounded-xl border font-bold transition text-xs ${
+                currentPage === 1 
+                ? 'border-slate-900/60 text-slate-600 cursor-not-allowed bg-[#0c0c12]/40' 
+                : 'border-slate-800 text-slate-300 hover:text-amber-400 hover:border-slate-700 bg-[#12121a] hover:bg-[#1c1c2e]'
+            }`;
+            prevBtn.innerHTML = '<i data-lucide="chevron-left" class="w-4 h-4"></i>';
+            if (currentPage > 1) {
+                prevBtn.onclick = () => changePage(currentPage - 1);
+            }
+            paginationContainer.appendChild(prevBtn);
+
+            // 2. Numerical pagination controls with sliding visible page window to prevent mobile clutter
+            const maxVisibleButtons = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxVisibleButtons / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisibleButtons - 1);
+
+            if (endPage - startPage + 1 < maxVisibleButtons) {
+                startPage = Math.max(1, endPage - maxVisibleButtons + 1);
+            }
+
+            // Insert Ellipses marker for omitted early pages if needed
+            if (startPage > 1) {
+                const firstPageBtn = document.createElement('button');
+                firstPageBtn.innerText = "1";
+                firstPageBtn.className = "flex items-center justify-center w-9 h-9 rounded-xl border border-slate-800 text-xs text-slate-300 font-bold transition bg-[#12121a] hover:bg-[#1c1c2e] hover:border-slate-700 hover:text-white";
+                firstPageBtn.onclick = () => changePage(1);
+                paginationContainer.appendChild(firstPageBtn);
+
+                if (startPage > 2) {
+                    const dots = document.createElement('span');
+                    dots.className = "flex items-center justify-center w-6 h-9 text-slate-500 font-bold text-xs";
+                    dots.innerText = "...";
+                    paginationContainer.appendChild(dots);
+                }
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                const pageBtn = document.createElement('button');
+                pageBtn.innerText = i;
+                
+                if (i === currentPage) {
+                    pageBtn.className = "flex items-center justify-center w-9 h-9 rounded-xl text-xs font-black bg-amber-500 text-black border border-amber-400/20 shadow-lg shadow-amber-500/10";
+                } else {
+                    pageBtn.className = "flex items-center justify-center w-9 h-9 rounded-xl border border-slate-800 text-xs text-slate-300 font-bold transition bg-[#12121a] hover:bg-[#1c1c2e] hover:border-slate-700 hover:text-white";
+                    pageBtn.onclick = () => changePage(i);
+                }
+                paginationContainer.appendChild(pageBtn);
+            }
+
+            // Insert Ellipses marker for omitted trailing pages if needed
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    const dots = document.createElement('span');
+                    dots.className = "flex items-center justify-center w-6 h-9 text-slate-500 font-bold text-xs";
+                    dots.innerText = "...";
+                    paginationContainer.appendChild(dots);
+                }
+
+                const lastPageBtn = document.createElement('button');
+                lastPageBtn.innerText = totalPages;
+                lastPageBtn.className = "flex items-center justify-center w-9 h-9 rounded-xl border border-slate-800 text-xs text-slate-300 font-bold transition bg-[#12121a] hover:bg-[#1c1c2e] hover:border-slate-700 hover:text-white";
+                lastPageBtn.onclick = () => changePage(totalPages);
+                paginationContainer.appendChild(lastPageBtn);
+            }
+
+            // 3. Next Arrow button
+            const nextBtn = document.createElement('button');
+            nextBtn.className = `flex items-center justify-center w-9 h-9 rounded-xl border font-bold transition text-xs ${
+                currentPage === totalPages 
+                ? 'border-slate-900/60 text-slate-600 cursor-not-allowed bg-[#0c0c12]/40' 
+                : 'border-slate-800 text-slate-300 hover:text-amber-400 hover:border-slate-700 bg-[#12121a] hover:bg-[#1c1c2e]'
+            }`;
+            nextBtn.innerHTML = '<i data-lucide="chevron-right" class="w-4 h-4"></i>';
+            if (currentPage < totalPages) {
+                nextBtn.onclick = () => changePage(currentPage + 1);
+            }
+            paginationContainer.appendChild(nextBtn);
+
+            lucide.createIcons();
+        }
+
+        // Change page & scroll smoothly up to the TCG grid starting border
+        function changePage(targetPage) {
+            currentPage = targetPage;
+            renderPaginatedList();
+            
+            // Scroll back smoothly to the beginning of the TCG products listing frame
+            const targetSection = document.getElementById('productsSection');
+            targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
         function handleImageError(img) {
@@ -1108,7 +1245,7 @@
             } else {
                 toast.className = "fixed bottom-5 right-5 z-50 bg-[#12121a] border border-amber-500/20 text-amber-300 px-4 py-3.5 rounded-xl shadow-2xl flex items-center gap-2.5 transform transition-all duration-300 text-xs font-bold";
                 icon.setAttribute('data-lucide', 'info');
-                icon.className = "w-4 h-4 text-amber-450";
+                icon.className = "w-4 h-4 text-amber-455";
             }
             
             lucide.createIcons();
