@@ -120,6 +120,92 @@
                         <i data-lucide="arrow-up-down" class="w-4 h-4 text-amber-400 shrink-0"></i>
                         <select id="sortSelect" onchange="applyFilters()" class="bg-transparent text-xs text-slate-300 outline-none w-full cursor-pointer font-bold">
                             <option value="none" class="bg-[#09090e]">Default Sort</option>
+                            <option value="price-asc" class="bg-[#09090e]">Price: Low to High</<body class="text-slate-100 min-h-screen flex flex-col antialiased selection:bg-amber-500 selection:text-black">
+
+    <!-- Main Navigation Header with Shrink Effect on Scroll -->
+    <header id="mainHeader" class="sticky top-0 z-40 bg-[#09090e]/95 backdrop-blur-md border-b border-slate-900 transition-all duration-300 ease-in-out py-6 h-28 flex items-center">
+        <div class="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
+            
+            <!-- Brand Logo & Shop Identity Space -->
+            <div id="logoContainer" class="flex items-center gap-4 transition-all duration-300 origin-left">
+                <div class="relative flex items-center justify-center shrink-0">
+                    <!-- Branded Shop Logo pointing to the renamed, URL-safe PNG file -->
+                    <img id="shopLogo" src="logo.png" alt="PokiéBros Logo" class="w-16 h-16 min-w-[64px] min-h-[64px] object-contain transition-all duration-300" onerror="this.onerror=null; this.src='https://placehold.co/100x100/12121a/fbbf24?text=PokiéBros';">
+                </div>
+                <!-- Shop Name & Subtitle Text Wrapper -->
+                <div id="shopTextContainer" class="transition-all duration-300">
+                    <h1 id="shopTitle" class="text-2xl md:text-3xl font-black tracking-tight bg-gradient-to-r from-white via-slate-100 to-amber-400 bg-clip-text text-transparent transition-all duration-300 leading-none">
+                        PokiéBros
+                    </h1>
+                    <p id="shopSubtitle" class="text-[10px] text-amber-400 font-extrabold tracking-widest uppercase transition-all duration-300 mt-1.5 flex items-center gap-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+                        Live Price & Stock Tracker
+                    </p>
+                </div>
+            </div>
+
+            <!-- Right-Side Header Control Tools: Setup Action & Connection Info -->
+            <div class="flex items-center gap-3">
+                <!-- Integrated Sheet Connection Button with Shop Matching Colors (Hidden for public by default) -->
+                <button id="adminConnectBtn" onclick="toggleConfigModal()" class="hidden flex items-center gap-2 bg-[#12121c] hover:bg-[#1c1c2e] text-slate-300 hover:text-amber-400 border border-slate-800 rounded-xl px-4 py-2.5 text-xs font-bold transition shadow-sm shrink-0">
+                    <i data-lucide="database" class="w-4 h-4 text-amber-400"></i>
+                    <span class="hidden sm:inline">Connect Sheet</span>
+                </button>
+
+                <!-- Connection Status Box -->
+                <div id="connectionStatus" class="flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-[#12121c] border border-slate-800 shrink-0">
+                    <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                    <span class="text-slate-400 hidden md:inline">Using Demo Data</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace Container -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        
+        <!-- Filter Controls Container -->
+        <section class="bg-[#12121a] border border-slate-800/80 rounded-2xl p-6 space-y-4 shadow-sm">
+            <div class="flex flex-col lg:flex-row gap-4 items-stretch lg:items-center justify-between">
+                <!-- Live Search Box with Theme Focus -->
+                <div class="relative flex-grow max-w-xl">
+                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                        <i data-lucide="search" class="h-4 w-4 text-slate-500"></i>
+                    </div>
+                    <input 
+                        type="text" 
+                        id="searchInput" 
+                        oninput="applyFilters()" 
+                        placeholder="Search products by title, notes, or set category..." 
+                        class="w-full bg-[#09090e] border border-slate-800 rounded-xl pl-10 pr-4 py-3 text-sm text-slate-100 placeholder-slate-650 focus:outline-none focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all"
+                    >
+                </div>
+
+                <!-- Sort and Filter Dropdown Sets -->
+                <div class="flex flex-wrap sm:flex-nowrap gap-3 items-center">
+                    <!-- Language Filter Dropdown -->
+                    <div class="flex items-center gap-2 bg-[#09090e] px-3.5 py-2 rounded-xl border border-slate-800 w-full sm:w-auto">
+                        <i data-lucide="globe" class="w-4 h-4 text-amber-400 shrink-0"></i>
+                        <select id="languageFilter" onchange="applyFilters()" class="bg-transparent text-xs text-slate-300 outline-none w-full cursor-pointer font-bold max-w-[140px]">
+                            <option value="all" class="bg-[#09090e]">All Languages</option>
+                        </select>
+                    </div>
+
+                    <!-- Stock Filter Dropdown -->
+                    <div class="flex items-center gap-2 bg-[#09090e] px-3.5 py-2 rounded-xl border border-slate-800 w-full sm:w-auto">
+                        <i data-lucide="filter" class="w-4 h-4 text-amber-400 shrink-0"></i>
+                        <select id="stockFilter" onchange="applyFilters()" class="bg-transparent text-xs text-slate-300 outline-none w-full cursor-pointer font-bold">
+                            <option value="all" class="bg-[#09090e]">All Stock Status</option>
+                            <option value="In Stock" class="bg-[#09090e]">In Stock Only</option>
+                            <option value="Pre-Order" class="bg-[#09090e]">Pre-Order Only</option>
+                        </select>
+                    </div>
+
+                    <!-- Sort Selection Dropdown -->
+                    <div class="flex items-center gap-2 bg-[#09090e] px-3.5 py-2 rounded-xl border border-slate-800 w-full sm:w-auto">
+                        <i data-lucide="arrow-up-down" class="w-4 h-4 text-amber-400 shrink-0"></i>
+                        <select id="sortSelect" onchange="applyFilters()" class="bg-transparent text-xs text-slate-300 outline-none w-full cursor-pointer font-bold">
+                            <option value="none" class="bg-[#09090e]">Default Sort</option>
                             <option value="price-asc" class="bg-[#09090e]">Price: Low to High</option>
                             <option value="price-desc" class="bg-[#09090e]">Price: High to Low</option>
                             <option value="name-asc" class="bg-[#09090e]">Name: A to Z</option>
