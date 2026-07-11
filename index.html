@@ -378,7 +378,7 @@
         /**
          * Automatically formats raw image URLs. 
          * Robustly catches any variant of Google Drive links and converts them 
-         * to Google's fast, web-optimized, bypass-ready Thumbnail Endpoint.
+         * to Google's fast, web-optimized, Safari-compatible direct-image CDN.
          */
         function formatImageUrl(url) {
             if (!url) return "";
@@ -408,9 +408,9 @@
                 }
             }
 
-            // If a valid Google Drive ID is extracted, load the secure, fast thumbnail bypass endpoint
+            // If a valid Google Drive ID is extracted, load the cookieless, Safari-compatible CDN link
             if (fileId) {
-                return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
+                return `https://lh3.googleusercontent.com/d/${fileId}`;
             }
 
             return cleanUrl;
