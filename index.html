@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PokiéBros • Live TCG Price & Stock Dashboard</title>
+    <!-- Tailwind CSS for modern utility styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter Google Font for clean premium typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght=300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- PapaParse for high-performance CSV parsing directly from Google Sheets -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <!-- Lucide Icons for high-quality SVG interface icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #09090e;
+        }
+        /* Custom scrollbar styling for a premium aesthetic */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #09090e;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e1e2f;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #fbbf24;
+        }
+    </style>
+</head>
+<body class="text-slate-100 min-h-screen flex flex-col antialiased selection:bg-amber-500 selection:text-black">
+
+    <!-- Main Navigation Header with Shrink Effect on Scroll -->
+    <header id="mainHeader" class="sticky top-0 z-40 bg-[#09090e]/95 backdrop-blur-md border-b border-slate-900 transition-all duration-300 ease-in-out py-6 h-28 flex items-center">
+        <div class="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
+            
+            <!-- Brand Logo & Shop Identity Space -->
+            <div id="logoContainer" class="flex items-center gap-4 transition-all duration-300 origin-left">
+                <div class="relative flex items-center justify-center shrink-0">
+                    <!-- Branded Shop Logo referencing PokieBros #2 Background Removed.jpg -->
+                    <img id="shopLogo" src="PokieBros #2 Background Removed.jpg" alt="PokiéBros Logo" class="w-16 h-16 min-w-[64px] min-h-[64px] object-contain transition-all duration-300" onerror="this.onerror=null; this.src='https://placehold.co/150x150/09090e/fbbf24?text=PokiéBros';">
+                </div>
+                <!-- Shop Name & Subtitle Text Wrapper -->
+                <div id="shopTextContainer" class="transition-all duration-300">
+                    <h1 id="shopTitle" class="text-2xl md:text-3xl font-black tracking-tight bg-gradient-to-r from-white via-slate-100 to-amber-400 bg-clip-text text-transparent transition-all duration-300 leading-none">
+                        PokiéBros
+                    </h1>
+                    <p id="shopSubtitle" class="text-[10px] text-amber-400 font-extrabold tracking-widest uppercase transition-all duration-300 mt-1.5 flex items-center gap-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+                        Live Price & Stock Tracker
+                    </p>
+                </div>
+            </div>
+
+            <!-- Right-Side Header Control Tools: Setup Action & Connection Info -->
+            <div class="flex items-center gap-3">
+                <!-- Integrated Sheet Connection Button with Shop Matching Colors (Hidden for public by default) -->
+                <button id="adminConnectBtn" onclick="toggleConfigModal()" class="hidden flex items-center gap-2 bg-[#12121c] hover:bg-[#1c1c2e] text-slate-300 hover:text-amber-400 border border-slate-800 rounded-xl px-4 py-2.5 text-xs font-bold transition shadow-sm shrink-0">
+                    <i data-lucide="database" class="w-4 h-4 text-amber-400"></i>
+                    <span class="hidden sm:inline">Connect Sheet</span>
+                </button>
+
+                <!-- Connection Status Box -->
+                <div id="connectionStatus" class="flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-[#12121c] border border-slate-800 shrink-0">
+                    <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                    <span class="text-slate-400 hidden md:inline">Using Demo Data</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace Container -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        
+        <!-- Filter Controls Container -->
+        <section class="bg-[#12121a] border border-slate-800/80 rounded-2xl p-6 space-y-4 shadow-sm">
+            <div class="flex flex-col lg:flex-row gap-4 items-stretch lg:items-center justify-between">
+                <!-- Live Search Box with Theme Focus -->
+                <div class="relative flex-grow max-w-xl">
+                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                        <i data-lucide="search" class="h-4 w-4 text-slate-500"></i>
+                    </div>
+                    <input 
+                        type="text" 
+                        id="searchInput" 
+                        oninput="applyFilters()" 
+                        placeholder="Search products by title, notes, or set category..." 
+                        class="w-full bg-[#09090e] border border-slate-800 rounded-xl pl-10 pr-4 py-3 text-sm text-slate-100 placeholder-slate-650 focus:outline-none focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all"
+                    >
+                </div>
+
+                <!-- Sort and Filter Dropdown Sets -->
+                <div class="flex flex-wrap sm:flex-nowrap gap-3 items-center">
+                    <!-- Language Filter Dropdown -->
+                    <div class="flex items-center gap-2 bg-[#09090e] px-3.5 py-2 rounded-xl border border-slate-800 w-full sm:w-auto">
+                        <i data-lucide="globe" class="w-4 h-4 text-amber-400 shrink-0"></i>
+                        <select id="languageFilter" onchange="applyFilters()" class="bg-transparent text-xs text-slate-300 outline-none w-full cursor-pointer font-bold max-w-[140px]">
+                            <option value="all" class="bg-[#09090e]">All Languages</option>
+                        </select>
+                    </div>
+
+                    <!-- Stock Filter Dropdown -->
+                    <div class="flex items-center gap-2 bg-[#09090e] px-3.5 py-2 rounded-xl border border-slate-800 w-full sm:w-auto">
+                        <i data-lucide="filter" class="w-4 h-4 text-amber-400 shrink-0"></i>
+                        <select id="stockFilter" onchange="applyFilters()" class="bg-transparent text-xs text-slate-300 outline-none w-full cursor-pointer font-bold">
+                            <option value="all" class="bg-[#09090e]">All Stock Status</option>
+                            <option value="In Stock" class="bg-[#09090e]">In Stock Only</option>
+                            <option value="Pre-Order" class="bg-[#09090e]">Pre-Order Only</option>
+                        </select>
+                    </div>
+
+                    <!-- Sort Selection Dropdown -->
+                    <div class="flex items-center gap-2 bg-[#09090e] px-3.5 py-2 rounded-xl border border-slate-800 w-full sm:w-auto">
+                        <i data-lucide="arrow-up-down" class="w-4 h-4 text-amber-400 shrink-0"></i>
+                        <select id="sortSelect" onchange="applyFilters()" class="bg-transparent text-xs text-slate-300 outline-none w-full cursor-pointer font-bold">
+                            <option value="none" class="bg-[#09090e]">Default Sort</option>
+                            <option value="price-asc" class="bg-[#09090e]">Price: Low to High</option>
+                            <option value="price-desc" class="bg-[#09090e]">Price: High to Low</option>
+                            <option value="name-asc" class="bg-[#09090e]">Name: A to Z</option>
+                            <option value="name-desc" class="bg-[#09090e]">Name: Z to A</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dynamic Category Tag Filters Row -->
+            <div class="border-t border-slate-800/50 pt-4">
+                <p class="text-[10px] text-slate-500 font-extrabold mb-2.5 flex items-center gap-1.5 uppercase tracking-wider">
+                    <i data-lucide="tags" class="w-3.5 h-3.5 text-amber-400"></i> Categories:
+                </p>
+                <div id="categoryPillContainer" class="flex flex-wrap gap-2">
+                    <!-- Loaded dynamically via JS based on allowed types -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Product Grid Workspace -->
+        <section>
+            <!-- Loading Indicator -->
+            <div id="loadingState" class="hidden flex-col items-center justify-center py-20 space-y-4">
+                <div class="w-10 h-10 border-2 border-amber-500/10 border-t-amber-400 rounded-full animate-spin"></div>
+                <p class="text-slate-400 text-xs font-semibold">Parsing spreadsheet database...</p>
+            </div>
+
+            <!-- Empty State / No Results found -->
+            <div id="emptyState" class="hidden flex flex-col items-center justify-center py-16 text-center bg-[#12121a]/50 border border-dashed border-slate-800 rounded-3xl p-8 max-w-md mx-auto">
+                <div class="p-4 bg-[#12121a] rounded-2xl text-slate-600 mb-4 border border-slate-800">
+                    <i data-lucide="package-search" class="w-8 h-8"></i>
+                </div>
+                <h3 class="text-white font-extrabold text-base">No Products Found</h3>
+                <p class="text-slate-500 text-xs mt-1.5 px-4">We couldn't find matches. Try adjusting your filters or search criteria.</p>
+                <button onclick="resetFilters()" class="mt-5 text-xs bg-amber-500 hover:bg-amber-400 text-black font-extrabold py-2.5 px-5 rounded-xl transition">
+                    Clear Active Filters
+                </button>
+            </div>
+
+            <!-- Active Products Cards Container -->
+            <div id="productsGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                <!-- Dynamically filled with products cards -->
+            </div>
+        </section>
+    </main>
+
+    <!-- Google Sheets Setup & Connection Modal -->
+    <div id="configModal" class="fixed inset-0 z-50 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <!-- Backdrop -->
+        <div class="fixed inset-0 bg-black/85 backdrop-blur-sm transition-opacity" onclick="toggleConfigModal()"></div>
+
+        <!-- Panel container -->
+        <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+            <div class="relative transform overflow-hidden rounded-2xl bg-[#12121a] border border-slate-800 text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-2xl">
+                <!-- Header -->
+                <div class="bg-[#0d0d14] px-6 py-5 flex items-center justify-between border-b border-slate-800">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="sheet" class="w-5 h-5 text-amber-400"></i>
+                        <h3 class="text-base font-black text-white leading-6" id="modal-title">Spreadsheet Connection</h3>
+                    </div>
+                    <button onclick="toggleConfigModal()" class="text-slate-400 hover:text-white transition">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+
+                <!-- Content Body -->
+                <div class="p-6 space-y-6">
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="block text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">PokiéBros Spreadsheet Link:</label>
+                            <span class="text-[10px] text-emerald-400 bg-emerald-950/20 px-2.5 py-0.5 rounded border border-emerald-500/20 flex items-center gap-1.5">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Auto-Format Parser
+                            </span>
+                        </div>
+                        <div class="flex gap-2">
+                            <input 
+                                type="text" 
+                                id="sheetUrlInput" 
+                                placeholder="Paste standard browser URL or direct CSV link here..." 
+                                class="flex-grow bg-[#09090e] border border-slate-800 rounded-xl px-4 py-3 text-xs text-slate-100 placeholder-slate-650 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                            >
+                            <button onclick="saveAndConnectSheet()" class="bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-xs px-5 py-3 rounded-xl transition flex items-center gap-1.5 shrink-0">
+                                <i data-lucide="refresh-cw" class="w-4 h-4"></i> Sync Sheet
+                            </button>
+                        </div>
+                        <p class="text-[10px] text-slate-500 mt-2.5 leading-relaxed">
+                            <strong>Setup Hint:</strong> Simply hit the blue <strong>"Share"</strong> button inside your spreadsheet, configure permissions to <strong>"Anyone with the link can view"</strong>, copy that browser URL, and paste it here.
+                        </p>
+                    </div>
+
+                    <!-- Diagnostics Log Box (Dynamic Troubleshooting) -->
+                    <div id="diagnosticsBox" class="hidden bg-red-950/10 border border-red-500/20 p-5 rounded-2xl space-y-2">
+                        <div class="flex items-center gap-2 text-red-400 text-xs font-bold uppercase tracking-wider">
+                            <i data-lucide="alert-triangle" class="w-4 h-4 text-red-500"></i>
+                            Spreadsheet Connection Troubleshooting
+                        </div>
+                        <div id="diagnosticsContent" class="text-slate-300 text-[10px] space-y-1 bg-[#09090e] p-3 rounded-xl border border-slate-850 font-mono overflow-x-auto whitespace-pre-wrap leading-relaxed">
+                            <!-- Populated with step-by-step diagnostic reports -->
+                        </div>
+                    </div>
+
+                    <!-- Steps Walkthrough Accordion/Guide -->
+                    <div class="border-t border-slate-800/80 pt-5">
+                        <h4 class="text-[10px] font-extrabold text-amber-400 tracking-wider uppercase mb-3 flex items-center gap-1.5">
+                            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-400 animate-spin"></i> Getting Started
+                        </h4>
+                        
+                        <div class="space-y-4 text-xs">
+                            <div class="flex gap-3 bg-amber-500/5 border border-amber-500/10 p-3.5 rounded-xl">
+                                <div class="w-6 h-6 shrink-0 bg-amber-500 text-black flex items-center justify-center font-black rounded-lg text-[10px]">1</div>
+                                <div>
+                                    <p class="font-bold text-slate-200">Set View Permissions</p>
+                                    <p class="text-slate-400 mt-0.5 leading-relaxed">
+                                        Inside Google Sheets, change access settings so that **"Anyone with the link can view"**.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="flex gap-3">
+                                <div class="w-6 h-6 shrink-0 bg-slate-800 text-slate-400 flex items-center justify-center font-bold rounded-lg text-[10px]">2</div>
+                                <div>
+                                    <p class="font-bold text-slate-200">Copy & Paste URL</p>
+                                    <p class="text-slate-400 mt-0.5 leading-relaxed">
+                                        Copy the normal edit page link straight from your browser's address bar. We handle the formatting backend.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Headers Check List -->
+                            <div class="border-t border-slate-800 pt-4">
+                                <p class="font-bold text-slate-350 text-[11px] uppercase tracking-wider mb-2">Required Columns (Row 1):</p>
+                                <div class="bg-[#09090e] p-3 rounded-xl font-mono text-[10px] text-amber-300 border border-slate-800 select-all overflow-x-auto">
+                                    ID, Product Name, Category, Price, Stock Status, Language, Image URL, Last Updated, Notes
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer Operations -->
+                <div class="bg-[#0d0d14] px-6 py-4 flex flex-wrap items-center justify-between border-t border-slate-800 gap-2">
+                    <button onclick="clearSheetConnection()" class="text-xs text-red-400 hover:text-red-300 font-bold flex items-center gap-1.5 transition">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Clear Sheet & Use Demo
+                    </button>
+                    <button onclick="toggleConfigModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold py-2 px-4 rounded-xl transition">
+                        Close Setup
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Product Detail Modal -->
+    <div id="detailModal" class="fixed inset-0 z-50 overflow-y-auto hidden" aria-labelledby="product-detail-title" role="dialog" aria-modal="true">
+        <!-- Backdrop -->
+        <div class="fixed inset-0 bg-black/90 backdrop-blur-sm transition-opacity" onclick="toggleDetailModal()"></div>
+
+        <!-- Detail container -->
+        <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+            <div class="relative transform overflow-hidden rounded-2xl bg-[#12121a] border border-slate-800 text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-xl">
+                
+                <!-- Card Detail Banner image container -->
+                <div class="relative bg-[#09090e] aspect-[4/3] flex items-center justify-center p-6 border-b border-slate-800/60">
+                    <div class="absolute top-4 left-4 z-10">
+                        <span id="detailBadge" class="px-3.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider"></span>
+                    </div>
+                    <button onclick="toggleDetailModal()" class="absolute top-4 right-4 z-10 p-2 bg-[#12121a]/80 hover:bg-slate-800 text-slate-300 hover:text-white rounded-full transition backdrop-blur-sm">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                    <!-- Added referrerpolicy to bypass hotlink protection in detail view -->
+                    <img id="detailImg" src="" alt="" class="max-h-full max-w-full object-contain rounded-xl drop-shadow-2xl" onerror="handleImageError(this)" referrerpolicy="no-referrer">
+                </div>
+
+                <!-- Info contents -->
+                <div class="p-6 space-y-4">
+                    <div class="flex justify-between items-start gap-4">
+                        <div>
+                            <span id="detailCategory" class="text-[10px] font-extrabold tracking-widest text-amber-400 uppercase"></span>
+                            <h3 id="detailTitle" class="text-lg font-black text-white mt-1 leading-snug"></h3>
+                        </div>
+                        <div class="text-right shrink-0">
+                            <span class="text-[10px] text-slate-500 block font-bold uppercase tracking-wider">Price</span>
+                            <div class="flex items-center gap-1.5 mt-0.5 justify-end">
+                                <span id="detailPrice" class="text-2xl font-black text-amber-400"></span>
+                            </div>
+                            <span id="detailLanguageBadge" class="text-[10px] text-amber-300 bg-amber-500/10 px-2.5 py-1 rounded-full border border-amber-500/20 inline-block mt-1.5 font-bold"></span>
+                        </div>
+                    </div>
+
+                    <!-- Additional Product Info List -->
+                    <div class="bg-[#09090e] p-4 rounded-xl border border-slate-800 grid grid-cols-2 gap-4">
+                        <div>
+                            <span class="text-[9px] text-slate-550 font-bold uppercase tracking-wider">SKU ID Code</span>
+                            <p id="detailId" class="text-xs font-semibold text-slate-200 mt-0.5"></p>
+                        </div>
+                        <div>
+                            <span class="text-[9px] text-slate-550 font-bold uppercase tracking-wider">Modified on</span>
+                            <p id="detailLastUpdate" class="text-xs font-semibold text-slate-200 mt-0.5"></p>
+                        </div>
+                    </div>
+
+                    <!-- Description/Notes -->
+                    <div class="space-y-1.5">
+                        <h4 class="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Product Description</h4>
+                        <p id="detailNotes" class="text-slate-350 text-xs leading-relaxed bg-[#09090e] p-4 rounded-xl border border-slate-800"></p>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="flex gap-2.5 pt-2">
+                        <button id="copyShareBtn" onclick="copyShareLink()" class="flex-grow bg-amber-500 hover:bg-amber-400 text-black font-black text-xs py-3.5 rounded-xl transition flex items-center justify-center gap-2">
+                            <i data-lucide="share-2" class="w-4 h-4"></i> Share Product Info
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- UI Message Toast Notifications -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 bg-[#12121a] border border-slate-800 text-slate-200 px-4 py-3.5 rounded-xl shadow-2xl flex items-center gap-2.5 transform translate-y-20 opacity-0 transition-all duration-300 text-xs font-bold">
+        <i id="toastIcon" data-lucide="info" class="w-4 h-4 text-amber-450"></i>
+        <span id="toastText">Action completed!</span>
+    </div>
+
+    <!-- Footer copyright info -->
+    <footer class="bg-[#09090e] border-t border-slate-900 py-6 text-center text-xs text-slate-500 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p>© 2026 PokiéBros. Built and integrated via Google Sheets.</p>
+            <p class="flex items-center gap-1">For Pokémon Collectors <i data-lucide="heart" class="w-3.5 h-3.5 text-amber-400 fill-amber-400"></i></p>
+        </div>
+    </footer>
+
+    <script>
+        // ==========================================
+        //  OWNER CONFIGURATION: HARDCODE YOUR SHEET
+        // ==========================================
+        // Paste your standard Google Sheet URL between the quotes below.
+        // Once pasted, everyone who visits your site will automatically see your live data!
+        const DEFAULT_SHEET_URL = "https://docs.google.com/spreadsheets/d/1WQImNkf_zh51UQYzskMB5TT7xNDFkIXaGupqLwKeLUE/edit?usp=sharing"; 
+
+        // Set the allowed categories as defined by you
+        const ALLOWED_CATEGORIES = [
+            "Booster Box",
+            "Booster Bundle",
+            "Booster Pack",
+            "Elite Trainer Box",
+            "Collection Box",
+            "Cases",
+            "Mini Tins",
+            "2-Pack",
+            "3-Pack",
+            "Graded Slabs"
+        ];
+
+        /**
+         * Automatically formats raw image URLs. 
+         * Robustly catches any variant of Google Drive links and converts them 
+         * to Google's fast, web-optimized, bypass-ready Thumbnail Endpoint.
+         */
+        function formatImageUrl(url) {
+            if (!url) return "";
+            let cleanUrl = url.trim();
+
+            let fileId = "";
+            
+            // 1. Detect standard path pattern: drive.google.com/file/d/FILE_ID/view
+            const standardPattern = cleanUrl.match(/\/file\/d\/([a-zA-Z0-9-_]+)/);
+            if (standardPattern && standardPattern[1]) {
+                fileId = standardPattern[1];
+            }
+            
+            // 2. Detect query parameter ID pattern: ?id=FILE_ID or &id=FILE_ID
+            if (!fileId) {
+                const queryPattern = cleanUrl.match(/[?&]id=([a-zA-Z0-9-_]+)/);
+                if (queryPattern && queryPattern[1]) {
+                    fileId = queryPattern[1];
+                }
+            }
+
+            // 3. Detect direct uc/open root endpoints: drive.google.com/uc?id=FILE_ID
+            if (!fileId) {
+                const rootPattern = cleanUrl.match(/\/uc\?id=([a-zA-Z0-9-_]+)/);
+                if (rootPattern && rootPattern[1]) {
+                    fileId = rootPattern[1];
+                }
+            }
+
+            // If a valid Google Drive ID is extracted, load the secure, fast thumbnail bypass endpoint
+            if (fileId) {
+                return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
+            }
+
+            return cleanUrl;
+        }
+
+        // MOCK/FALLBACK DEMO DATA: Aligned with the requested exact category list
+        const fallbackDatabase = [
+            {
+                "ID": "PKB-001",
+                "Product Name": "Scarlet & Violet 151 Booster Bundle",
+                "Category": "Booster Bundle",
+                "Price": "$42.50",
+                "Stock Status": "In Stock",
+                "Language": "English",
+                "Image URL": "https://placehold.co/400x400/12121a/fbbf24?text=151+Booster+Bundle",
+                "Last Updated": "2026-07-09",
+                "Notes": "Contains 6 Scarlet & Violet-151 booster packs. Ideal for master set collectors. Excellent entry set."
+            },
+            {
+                "ID": "PKB-002",
+                "Product Name": "Crown Zenith Elite Trainer Box",
+                "Category": "Elite Trainer Box",
+                "Price": "$52.00",
+                "Stock Status": "In Stock",
+                "Language": "English",
+                "Image URL": "https://placehold.co/400x400/12121a/fbbf24?text=Crown+Zenith+ETB",
+                "Last Updated": "2026-07-05",
+                "Notes": "Includes 10 Crown Zenith booster packs, 1 Lucario VSTAR special art promo card, and various premium accessories."
+            },
+            {
+                "ID": "PKB-003",
+                "Product Name": "Charizard ex Super Premium Collection",
+                "Category": "Collection Box",
+                "Price": "$119.99",
+                "Stock Status": "Pre-Order",
+                "Language": "English",
+                "Image URL": "https://placehold.co/400x400/12121a/fbbf24?text=Charizard+Collection",
+                "Last Updated": "2026-07-11",
+                "Notes": "Features an incredible etched foil promo card featuring Charizard ex, plus a heavy storage box and accessories."
+            },
+            {
+                "ID": "PKB-004",
+                "Product Name": "Charizard Base Set Unlimited - PSA 8",
+                "Category": "Graded Slabs",
+                "Price": "$450.00",
+                "Stock Status": "Low Stock",
+                "Language": "English",
+                "Image URL": "https://placehold.co/400x400/12121a/fbbf24?text=Base+Set+Charizard",
+                "Last Updated": "2026-07-10",
+                "Notes": "Classic 1999 holographic Base Set Charizard graded 8 (Near Mint-Mint) by PSA. Iconic grail item."
+            },
+            {
+                "ID": "PKB-005",
+                "Product Name": "Prismatic Evolutions Booster Box",
+                "Category": "Booster Box",
+                "Price": "$135.00",
+                "Stock Status": "Pre-Order",
+                "Language": "Japanese",
+                "Image URL": "https://placehold.co/400x400/12121a/fbbf24?text=Prismatic+Evolutions",
+                "Last Updated": "2026-07-01",
+                "Notes": "Upcoming super-anticipated Eeveelutions set. Expected delivery late Q3."
+            },
+            {
+                "ID": "PKB-006",
+                "Product Name": "Shiny Treasure ex Booster Pack",
+                "Category": "Booster Pack",
+                "Price": "$6.49",
+                "Stock Status": "Out of Stock",
+                "Language": "Japanese",
+                "Image URL": "https://placehold.co/400x400/12121a/fbbf24?text=Shiny+Treasure+Pack",
+                "Last Updated": "2026-06-28",
+                "Notes": "Highly popular Japanese High Class subset pack. Currently sold out due to high demand."
+            }
+        ];
+
+        // Global State variables
+        let products = [];
+        let activeCategoryFilter = "all";
+
+        // DOM elements initialization
+        window.onload = function() {
+            // Check if admin backdoor is active (e.g., yoursite.com/?admin=true)
+            const urlParams = new URLSearchParams(window.location.search);
+            const isAdmin = urlParams.get('admin') === 'true';
+
+            // Show the database connection button ONLY to the owner
+            const adminBtn = document.getElementById('adminConnectBtn');
+            if (isAdmin) {
+                adminBtn.classList.remove('hidden');
+            }
+
+            // Determine which URL to pull live data from
+            let activeUrl = DEFAULT_SHEET_URL;
+
+            // If you haven't hardcoded the URL yet, or if you are in admin mode,
+            // fall back to whatever you previously saved in local storage.
+            if (!activeUrl || activeUrl === "YOUR_GOOGLE_SHEET_URL_HERE") {
+                activeUrl = localStorage.getItem('pkm_sheet_url');
+            }
+
+            if (activeUrl && activeUrl !== "YOUR_GOOGLE_SHEET_URL_HERE") {
+                document.getElementById('sheetUrlInput').value = activeUrl;
+                fetchSheetAndBuild(activeUrl);
+            } else {
+                useDemoFallback();
+            }
+            lucide.createIcons();
+        }
+
+        // Header Scroll shrink interaction listener with fixed sizing backups
+        window.addEventListener('scroll', function() {
+            const header = document.getElementById('mainHeader');
+            const logoContainer = document.getElementById('logoContainer');
+            const logoImg = document.getElementById('shopLogo');
+            const shopTitle = document.getElementById('shopTitle');
+            const shopSubtitle = document.getElementById('shopSubtitle');
+            
+            if (window.scrollY > 20) {
+                // Apply condensed scroll state
+                header.classList.remove('py-6', 'h-28');
+                header.classList.add('py-2', 'h-16', 'shadow-xl', 'shadow-black/60');
+                
+                logoImg.style.width = '40px';
+                logoImg.style.height = '40px';
+                logoImg.style.minWidth = '40px';
+                logoImg.style.minHeight = '40px';
+                
+                shopTitle.classList.remove('text-2xl', 'md:text-3xl');
+                shopTitle.classList.add('text-lg');
+                
+                shopSubtitle.classList.add('opacity-0', 'pointer-events-none', 'max-h-0', 'overflow-hidden');
+                shopSubtitle.classList.remove('mt-1.5');
+            } else {
+                // Restore expansive top layout
+                header.classList.remove('py-2', 'h-16', 'shadow-xl', 'shadow-black/60');
+                header.classList.add('py-6', 'h-28');
+                
+                logoImg.style.width = '64px';
+                logoImg.style.height = '64px';
+                logoImg.style.minWidth = '64px';
+                logoImg.style.minHeight = '64px';
+                
+                shopTitle.classList.remove('text-lg');
+                shopTitle.classList.add('text-2xl', 'md:text-3xl');
+                
+                shopSubtitle.classList.remove('opacity-0', 'pointer-events-none', 'max-h-0', 'overflow-hidden');
+                shopSubtitle.classList.add('mt-1.5');
+            }
+        });
+
+        // Display Fallback/Demo Mock Data
+        function useDemoFallback() {
+            products = JSON.parse(JSON.stringify(fallbackDatabase));
+            updateConnectionBadge(false);
+            buildCategoryFilters();
+            buildLanguageFilters();
+            applyFilters();
+        }
+
+        /**
+         * Cleans and converts any standard Google Sheet view/share URL to a direct public CSV download url.
+         */
+        function cleanGoogleSheetUrl(url) {
+            if (!url) return "";
+            let cleanUrl = url.trim();
+
+            // 1. Check if they pasted a typical browser /edit spreadsheet sharing URL
+            const editRegex = /\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/;
+            const match = cleanUrl.match(editRegex);
+            if (match && match[1]) {
+                const docId = match[1];
+                // Check if they pointed to a specific tab via a GID parameter
+                const gidRegex = /[#&?]gid=([0-9]+)/;
+                const gidMatch = cleanUrl.match(gidRegex);
+                const gidParam = gidMatch ? `&gid=${gidMatch[1]}` : "";
+                
+                // Construct the ultimate direct-export CSV link
+                return `https://docs.google.com/spreadsheets/d/${docId}/export?format=csv${gidParam}`;
+            }
+
+            // 2. Check if they shared a "Published to web" HTML preview link instead of CSV
+            if (cleanUrl.includes("/pubhtml")) {
+                cleanUrl = cleanUrl.replace("/pubhtml", "/pub?output=csv");
+            } else if (cleanUrl.includes("/pub") && !cleanUrl.includes("output=csv")) {
+                if (cleanUrl.includes("?")) {
+                    cleanUrl += "&output=csv";
+                } else {
+                    cleanUrl += "?output=csv";
+                }
+            }
+
+            return cleanUrl;
+        }
+
+        // Fetch and Parse the Google Sheets CSV
+        function fetchSheetAndBuild(rawUrl) {
+            if (!rawUrl) return;
+            
+            showLoader(true);
+            hideDiagnostics();
+
+            const convertedUrl = cleanGoogleSheetUrl(rawUrl);
+            const cacheBustUrl = `${convertedUrl}&t=${new Date().getTime()}`;
+
+            Papa.parse(cacheBustUrl, {
+                download: true,
+                header: true,
+                skipEmptyLines: 'greedy',
+                complete: function(results) {
+                    showLoader(false);
+                    
+                    if (results && results.data && results.data.length > 0) {
+                        const rawKeys = results.meta && results.meta.fields ? results.meta.fields : Object.keys(results.data[0]);
+                        
+                        const containsHtml = results.data.some(row => 
+                            Object.values(row).some(val => typeof val === 'string' && (val.includes('<!DOCTYPE') || val.includes('<html') || val.includes('google-signin')))
+                        );
+
+                        if (containsHtml) {
+                            showToast("Access Error: Spreadsheet is private!", "error");
+                            showDiagnosticsLog(
+                                `SYNC CRITICAL ERROR:\n` +
+                                `--------------------------------------------------------\n` +
+                                `The link you provided returned an HTML webpage instead of a CSV database.\n\n` +
+                                `This is almost always because your Google Sheet general sharing permissions are set to "Restricted".\n\n` +
+                                `HOW TO FIX THIS:\n` +
+                                `1. Open your Google Sheet.\n` +
+                                `2. Click the big blue "Share" button in the top-right corner.\n` +
+                                `3. Change the General Access dropdown from "Restricted" to "Anyone with the link".\n` +
+                                `4. Click "Copy link", paste that link back here, and click "Sync Sheet" again.`
+                            );
+                            useDemoFallback();
+                            return;
+                        }
+
+                        // Normalize headers and assign formatted products
+                        products = results.data.map((item, idx) => {
+                            return {
+                                "ID": getNormalizedValue(item, ["ID", "id", "Product ID", "Code", "sku"]),
+                                "Product Name": getNormalizedValue(item, ["Product Name", "product name", "Name", "Title", "item", "product"]),
+                                "Category": getNormalizedValue(item, ["Category", "category", "Type", "class"]),
+                                "Price": getNormalizedValue(item, ["Price", "price", "Cost", "Value", "msrp"]),
+                                "Stock Status": getNormalizedValue(item, ["Stock Status", "stock status", "Stock", "Status", "Availability", "qty"]),
+                                "Language": getNormalizedValue(item, ["Language", "language", "Lang", "lang", "Edition"]),
+                                "Image URL": getNormalizedValue(item, ["Image URL", "image url", "Image", "Photo", "Pic", "img"]),
+                                "Last Updated": getNormalizedValue(item, ["Last Updated", "last updated", "Updated", "Date"]),
+                                "Notes": getNormalizedValue(item, ["Notes", "notes", "Description", "Details", "comment"])
+                            };
+                        }).filter(p => p["Product Name"] && p["Product Name"].trim() !== "");
+
+                        if (products.length > 0) {
+                            showToast("Sheet Sync Successful!", "success");
+                            updateConnectionBadge(true);
+                            buildCategoryFilters();
+                            buildLanguageFilters();
+                            applyFilters();
+                        } else {
+                            showToast("Header Match Error: Column headers incorrect!", "error");
+                            const expectedHeaders = ["Product Name", "Price", "Category", "Stock Status", "Language"];
+                            
+                            showDiagnosticsLog(
+                                `HEADER MATCH FAILURE:\n` +
+                                `--------------------------------------------------------\n` +
+                                `We downloaded the sheet successfully (found ${results.data.length} rows), but couldn't identify the right columns.\n\n` +
+                                `Headers Found in your sheet: \n[ ${rawKeys.join(", ")} ]\n\n` +
+                                `WHAT WE ARE SEARCHING FOR:\n` +
+                                `- To display names, we look for: "Product Name", "Name", or "Title"\n` +
+                                `- To display prices, we look for: "Price", "Cost", or "Value"\n` +
+                                `- To display language, we look for: "Language", "Lang", or "Edition"\n\n` +
+                                `HOW TO FIX THIS:\n` +
+                                `Please rename your top Row 1 spreadsheet headers to match the list above, then re-sync!`
+                            );
+                            useDemoFallback();
+                        }
+                    } else {
+                        showToast("Failed to parse sheet data.", "error");
+                        showDiagnosticsLog(
+                            `PARSING ERROR:\n` +
+                            `--------------------------------------------------------\n` +
+                            `The file returned was completely empty or could not be formatted. Ensure there is data below your first row in the sheet.`
+                        );
+                        useDemoFallback();
+                    }
+                },
+                error: function(err) {
+                    showLoader(false);
+                    showToast("Could not download spreadsheet link.", "error");
+                    showDiagnosticsLog(
+                        `NETWORK/DOWNLOAD ERROR:\n` +
+                        `--------------------------------------------------------\n` +
+                        `We could not contact Google's servers using the link provided.\n\n` +
+                        `Common causes:\n` +
+                        `- The URL contains a typo.\n` +
+                        `- The spreadsheet has been deleted or set back to Private.\n` +
+                        `- Your network connection blocks direct CSV exports.\n\n` +
+                        `Tried pulling from: \n${convertedUrl}`
+                    );
+                    useDemoFallback();
+                }
+            });
+        }
+
+        // Match possible header case mismatches in client spreadsheets
+        function getNormalizedValue(object, candidateKeys) {
+            for (let key of candidateKeys) {
+                if (object[key] !== undefined) return object[key];
+                const caseInsensitiveMatch = Object.keys(object).find(k => k.toLowerCase().trim() === key.toLowerCase().trim());
+                if (caseInsensitiveMatch) return object[caseInsensitiveMatch];
+            }
+            return "";
+        }
+
+        function showDiagnosticsLog(reportText) {
+            const box = document.getElementById('diagnosticsBox');
+            const content = document.getElementById('diagnosticsContent');
+            content.innerText = reportText;
+            box.classList.remove('hidden');
+        }
+
+        function hideDiagnostics() {
+            const box = document.getElementById('diagnosticsBox');
+            box.classList.add('hidden');
+        }
+
+        function saveAndConnectSheet() {
+            const inputUrl = document.getElementById('sheetUrlInput').value.trim();
+            if (!inputUrl) {
+                showToast("Please enter a valid Google Sheet URL.", "error");
+                return;
+            }
+
+            localStorage.setItem('pkm_sheet_url', inputUrl);
+            fetchSheetAndBuild(inputUrl);
+        }
+
+        function clearSheetConnection() {
+            localStorage.removeItem('pkm_sheet_url');
+            document.getElementById('sheetUrlInput').value = "";
+            hideDiagnostics();
+            useDemoFallback();
+            showToast("Connection cleared. Reverted to Demo Layout.", "success");
+            toggleConfigModal();
+        }
+
+        function toggleConfigModal() {
+            const modal = document.getElementById('configModal');
+            modal.classList.toggle('hidden');
+        }
+
+        function showLoader(show) {
+            const loader = document.getElementById('loadingState');
+            const grid = document.getElementById('productsGrid');
+            if (show) {
+                loader.classList.remove('hidden');
+                loader.classList.add('flex');
+                grid.classList.add('hidden');
+            } else {
+                loader.classList.add('hidden');
+                loader.classList.remove('flex');
+                grid.classList.remove('hidden');
+            }
+        }
+
+        function updateConnectionBadge(isConnected) {
+            const badge = document.getElementById('connectionStatus');
+            if (isConnected) {
+                badge.innerHTML = `
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span class="text-slate-100 text-xs font-bold">Live Sync Connected</span>
+                `;
+            } else {
+                badge.innerHTML = `
+                    <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                    <span class="text-slate-400 text-xs font-bold font-mono">Using Demo Data</span>
+                `;
+            }
+        }
+
+        function parsePriceToFloat(priceStr) {
+            if (!priceStr) return NaN;
+            return parseFloat(priceStr.toString().replace(/[$,]/g, '').trim());
+        }
+
+        // Render exactly the permitted categories in your pill lists
+        function buildCategoryFilters() {
+            const container = document.getElementById('categoryPillContainer');
+            container.innerHTML = "";
+
+            // All Products Pill
+            const allPill = document.createElement('button');
+            allPill.innerText = "All Products";
+            allPill.setAttribute('onclick', `setCategoryFilter('all')`);
+            allPill.className = getCategoryPillClasses(activeCategoryFilter === 'all');
+            container.appendChild(allPill);
+
+            // Permitted Categories list loop
+            ALLOWED_CATEGORIES.forEach(cat => {
+                const catPill = document.createElement('button');
+                catPill.innerText = cat;
+                catPill.setAttribute('onclick', `setCategoryFilter('${cat.replace(/'/g, "\\'")}')`);
+                catPill.className = getCategoryPillClasses(activeCategoryFilter.toLowerCase() === cat.toLowerCase());
+                container.appendChild(catPill);
+            });
+        }
+
+        function buildLanguageFilters() {
+            const select = document.getElementById('languageFilter');
+            const currentSelected = select.value;
+            select.innerHTML = '<option value="all" class="bg-[#09090e]">All Languages</option>';
+
+            const uniqueLanguages = new Set();
+            products.forEach(p => {
+                if (p["Language"] && p["Language"].trim() !== "") {
+                    uniqueLanguages.add(p["Language"].trim());
+                }
+            });
+
+            uniqueLanguages.forEach(lang => {
+                const opt = document.createElement('option');
+                opt.value = lang;
+                opt.className = "bg-[#09090e]";
+                opt.innerText = lang;
+                select.appendChild(opt);
+            });
+
+            if (uniqueLanguages.has(currentSelected)) {
+                select.value = currentSelected;
+            } else {
+                select.value = "all";
+            }
+        }
+
+        function getCategoryPillClasses(isActive) {
+            if (isActive) {
+                return "px-4 py-1.5 rounded-full text-xs font-bold bg-amber-500 text-black shadow-md shadow-amber-500/10 transition-all cursor-pointer";
+            } else {
+                return "px-4 py-1.5 rounded-full text-xs font-bold bg-[#09090e] hover:bg-[#12121a] text-slate-400 hover:text-amber-400 border border-slate-800 transition-all cursor-pointer";
+            }
+        }
+
+        function setCategoryFilter(category) {
+            activeCategoryFilter = category;
+            buildCategoryFilters();
+            applyFilters();
+        }
+
+        function applyFilters() {
+            const searchQuery = document.getElementById('searchInput').value.toLowerCase().trim();
+            const stockFilter = document.getElementById('stockFilter').value;
+            const languageFilter = document.getElementById('languageFilter').value;
+            const sortMode = document.getElementById('sortSelect').value;
+
+            let filteredList = products.filter(p => {
+                // Ensure sold out / out of stock items are completely hidden from display
+                const stockStatus = p["Stock Status"] ? p["Stock Status"].toLowerCase().trim() : "";
+                if (stockStatus === "out of stock" || stockStatus === "sold out") {
+                    return false;
+                }
+
+                const nameMatch = p["Product Name"].toLowerCase().includes(searchQuery);
+                const categoryMatch = p["Category"] ? p["Category"].toLowerCase().includes(searchQuery) : false;
+                const noteMatch = p["Notes"] ? p["Notes"].toLowerCase().includes(searchQuery) : false;
+                const langMatch = p["Language"] ? p["Language"].toLowerCase().includes(searchQuery) : false;
+                const searchPass = nameMatch || categoryMatch || noteMatch || langMatch;
+
+                // Category verification (checks category exact match or handles variations gracefully)
+                let categoryPillPass = false;
+                if (activeCategoryFilter === 'all') {
+                    categoryPillPass = true;
+                } else if (p["Category"]) {
+                    categoryPillPass = (p["Category"].trim().toLowerCase() === activeCategoryFilter.toLowerCase());
+                }
+
+                let stockPass = true;
+                if (stockFilter !== "all") {
+                    stockPass = (p["Stock Status"] && p["Stock Status"].toLowerCase() === stockFilter.toLowerCase());
+                }
+
+                let languagePass = true;
+                if (languageFilter !== "all") {
+                    languagePass = (p["Language"] && p["Language"].trim() === languageFilter);
+                }
+
+                return searchPass && categoryPillPass && stockPass && languagePass;
+            });
+
+            const stockPriority = {
+                "in stock": 1,
+                "low stock": 2,
+                "pre-order": 3,
+                "out of stock": 4,
+                "sold out": 4
+            };
+
+            if (sortMode !== "none") {
+                filteredList.sort((a, b) => {
+                    const priceA = parsePriceToFloat(a["Price"]) || 0;
+                    const priceB = parsePriceToFloat(b["Price"]) || 0;
+
+                    if (sortMode === "price-asc") return priceA - priceB;
+                    if (sortMode === "price-desc") return priceB - priceA;
+                    
+                    const nameA = a["Product Name"].toLowerCase();
+                    const nameB = b["Product Name"].toLowerCase();
+
+                    if (sortMode === "name-asc") return nameA.localeCompare(nameB);
+                    if (sortMode === "name-desc") return nameB.localeCompare(nameA);
+                    
+                    return 0;
+                });
+            } else {
+                // Default sorting by stock priority descending (IN STOCK -> LOW STOCK -> PRE-ORDER -> SOLD OUT)
+                filteredList.sort((a, b) => {
+                    const statusA = (a["Stock Status"] || "").toLowerCase().trim();
+                    const statusB = (b["Stock Status"] || "").toLowerCase().trim();
+                    const priorityA = stockPriority[statusA] || 99;
+                    const priorityB = stockPriority[statusB] || 99;
+                    return priorityA - priorityB;
+                });
+            }
+
+            renderProductCards(filteredList);
+        }
+
+        function resetFilters() {
+            document.getElementById('searchInput').value = "";
+            document.getElementById('stockFilter').value = "all";
+            document.getElementById('languageFilter').value = "all";
+            document.getElementById('sortSelect').value = "none";
+            activeCategoryFilter = "all";
+            buildCategoryFilters();
+            applyFilters();
+        }
+
+        function renderProductCards(items) {
+            const container = document.getElementById('productsGrid');
+            const emptyState = document.getElementById('emptyState');
+            
+            container.innerHTML = "";
+
+            if (items.length === 0) {
+                emptyState.classList.remove('hidden');
+                container.classList.add('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            container.classList.remove('hidden');
+
+            items.forEach((p, index) => {
+                const objectPointer = products.findIndex(item => item["ID"] === p["ID"]);
+                const stockBadge = getStockBadgeTemplate(p["Stock Status"]);
+
+                const langValue = p["Language"] ? p["Language"].trim() : "";
+                const langBadge = langValue ? `<span class="bg-amber-500/10 text-amber-300 border border-amber-500/20 text-[9px] font-black px-2 py-0.5 rounded-full backdrop-blur-sm">${langValue}</span>` : "";
+
+                // Run image URL through our automatic formatter
+                const finalImgUrl = formatImageUrl(p["Image URL"]);
+
+                const card = document.createElement('div');
+                card.className = "bg-[#12121a] border border-slate-800/80 hover:border-slate-700/80 rounded-2xl overflow-hidden shadow-md hover:shadow-amber-500/5 hover:-translate-y-1 transition-all duration-300 flex flex-col cursor-pointer group";
+                card.setAttribute('onclick', `openProductDetails(${objectPointer})`);
+
+                // Added referrerpolicy to bypass hotlink protection on grid images
+                card.innerHTML = `
+                    <div class="relative bg-[#09090e] flex items-center justify-center p-4 aspect-[4/3] border-b border-slate-800/50 overflow-hidden">
+                        <img 
+                            src="${finalImgUrl || 'https://placehold.co/400x400/12121a/fbbf24?text=TCG+Product'}" 
+                            alt="${p["Product Name"]}" 
+                            class="max-h-full max-w-full object-contain rounded-xl hover:scale-105 transition duration-350 drop-shadow-md"
+                            onerror="handleImageError(this)"
+                            referrerpolicy="no-referrer"
+                        >
+                        <div class="absolute top-3 left-3 flex flex-col gap-1.5">
+                            ${stockBadge}
+                        </div>
+                        <div class="absolute top-3 right-3 flex flex-col gap-1.5">
+                            ${langBadge}
+                        </div>
+                    </div>
+                    
+                    <div class="p-4 flex-grow flex flex-col justify-between space-y-4">
+                        <div class="space-y-1">
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="text-[10px] font-extrabold text-amber-400 uppercase tracking-widest truncate">${p["Category"] || 'Miscellaneous'}</span>
+                                ${p["ID"] ? `<span class="text-[9px] font-mono font-bold text-slate-500 uppercase tracking-wider shrink-0">${p["ID"]}</span>` : ''}
+                            </div>
+                            <h4 class="text-sm font-bold text-white line-clamp-2 leading-snug group-hover:text-amber-400 transition duration-150">${p["Product Name"]}</h4>
+                        </div>
+
+                        <div class="pt-2 border-t border-slate-800/50 flex items-center justify-between">
+                            <div>
+                                <span class="text-[8px] text-slate-550 font-extrabold uppercase tracking-widest block">Price</span>
+                                <div class="flex items-center">
+                                    <span class="text-base font-extrabold text-amber-400">${p["Price"] || 'TBD'}</span>
+                                </div>
+                            </div>
+                            <div class="w-8 h-8 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-400 group-hover:bg-amber-500 group-hover:text-black transition">
+                                <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                container.appendChild(card);
+            });
+
+            lucide.createIcons();
+        }
+
+        function handleImageError(img) {
+            img.src = "https://placehold.co/400x400/09090e/222235?text=Image+Pending";
+        }
+
+        function getStockBadgeTemplate(status) {
+            const clean = status ? status.toLowerCase().trim() : "";
+            if (clean === "in stock") {
+                return `<span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider">In Stock</span>`;
+            } else if (clean === "pre-order") {
+                return `<span class="bg-blue-500/10 text-blue-400 border border-blue-500/20 text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider">Pre-Order</span>`;
+            } else if (clean === "low stock") {
+                return `<span class="bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider">Low Stock</span>`;
+            } else if (clean === "out of stock") {
+                return `<span class="bg-red-500/10 text-red-400 border border-red-500/20 text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider">Sold Out</span>`;
+            }
+            return `<span class="bg-slate-800 text-slate-400 border border-slate-700/50 text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider">Check Stock</span>`;
+        }
+
+        let selectedProductIndex = null;
+
+        function openProductDetails(globalIndex) {
+            selectedProductIndex = globalIndex;
+            const p = products[globalIndex];
+
+            // Run image URL through our automatic formatter for the modal view as well
+            const finalImgUrl = formatImageUrl(p["Image URL"]);
+
+            document.getElementById('detailTitle').innerText = p["Product Name"];
+            document.getElementById('detailCategory').innerText = p["Category"] || 'Miscellaneous';
+            document.getElementById('detailImg').src = finalImgUrl || 'https://placehold.co/400x400/12121a/fbbf24?text=TCG+Product';
+            document.getElementById('detailImg').alt = p["Product Name"];
+            document.getElementById('detailPrice').innerText = p["Price"] || 'Price TBD';
+            document.getElementById('detailId').innerText = p["ID"] || 'N/A';
+            document.getElementById('detailLastUpdate').innerText = p["Last Updated"] || 'Not Specified';
+            document.getElementById('detailNotes').innerText = p["Notes"] || 'No custom description notes have been entered for this TCG item.';
+
+            const langEl = document.getElementById('detailLanguageBadge');
+            if (p["Language"]) {
+                langEl.innerText = `${p["Language"]} Print`;
+                langEl.classList.remove('hidden');
+            } else {
+                langEl.classList.add('hidden');
+            }
+
+            const badgeEl = document.getElementById('detailBadge');
+            const cleanStock = p["Stock Status"] ? p["Stock Status"].toLowerCase().trim() : "";
+            
+            badgeEl.className = "px-3.5 py-1 rounded-full text-[9px] font-extrabold uppercase tracking-widest ";
+            if (cleanStock === "in stock") {
+                badgeEl.innerText = "In Stock";
+                badgeEl.className += "bg-emerald-500 text-black";
+            } else if (cleanStock === "pre-order") {
+                badgeEl.innerText = "Pre-Order";
+                badgeEl.className += "bg-blue-500 text-white";
+            } else if (cleanStock === "low stock") {
+                badgeEl.innerText = "Low Stock";
+                badgeEl.className += "bg-amber-400 text-black";
+            } else {
+                badgeEl.innerText = "Sold Out";
+                badgeEl.className += "bg-red-500 text-white";
+            }
+
+            toggleDetailModal();
+        }
+
+        function toggleDetailModal() {
+            const modal = document.getElementById('detailModal');
+            modal.classList.toggle('hidden');
+            lucide.createIcons();
+        }
+
+        function copyShareLink() {
+            if (selectedProductIndex === null) return;
+            const p = products[selectedProductIndex];
+
+            const shareText = `*${p["Product Name"]}* \nPrice: ${p["Price"] || 'TBD'} (${p["Stock Status"] || 'Check Status'}) \nLanguage: ${p["Language"] || 'N/A'} \nNotes: ${p["Notes"] || 'No detailed info'}`;
+            
+            const tempInput = document.createElement("textarea");
+            tempInput.value = shareText;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+
+            showToast("Copied product info to clipboard!", "success");
+        }
+
+        function showToast(message, type = "info") {
+            const toast = document.getElementById('toast');
+            const icon = document.getElementById('toastIcon');
+            document.getElementById('toastText').innerText = message;
+            
+            if (type === "success") {
+                toast.className = "fixed bottom-5 right-5 z-50 bg-[#12121a] border border-emerald-500/20 text-emerald-300 px-4 py-3.5 rounded-xl shadow-2xl flex items-center gap-2.5 transform transition-all duration-300 text-xs font-bold";
+                icon.setAttribute('data-lucide', 'check-circle');
+                icon.className = "w-4 h-4 text-emerald-400";
+            } else if (type === "error") {
+                toast.className = "fixed bottom-5 right-5 z-50 bg-[#12121a] border border-red-500/20 text-red-300 px-4 py-3.5 rounded-xl shadow-2xl flex items-center gap-2.5 transform transition-all duration-300 text-xs font-bold";
+                icon.setAttribute('data-lucide', 'alert-circle');
+                icon.className = "w-4 h-4 text-red-400";
+            } else {
+                toast.className = "fixed bottom-5 right-5 z-50 bg-[#12121a] border border-amber-500/20 text-amber-300 px-4 py-3.5 rounded-xl shadow-2xl flex items-center gap-2.5 transform transition-all duration-300 text-xs font-bold";
+                icon.setAttribute('data-lucide', 'info');
+                icon.className = "w-4 h-4 text-amber-400";
+            }
+            
+            lucide.createIcons();
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+                toast.classList.remove('translate-y-0', 'opacity-100');
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
